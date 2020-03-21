@@ -2,8 +2,7 @@ import { Component } from '@angular/core';
 import { PivotNumber } from 'src/models/number';
 
 import * as _ from 'lodash';
-import { MatrixHelper } from 'src/helpers/MatrixHelper';
-import { threadId } from 'worker_threads';
+import { MatrixHelper as MatriceHelper } from 'src/helpers/MatriceHelper';
 
 const START_VARIABLE_AMOUNT = 2;
 const START_CONSTRAINT_AMOUNT = 3;
@@ -21,10 +20,10 @@ export class AppComponent {
   variables = START_VARIABLE_AMOUNT;
 
   b: PivotNumber[] =
-    MatrixHelper.generateNumberRow(START_CONSTRAINT_AMOUNT + 1);
+    MatriceHelper.generateNumberRow(START_CONSTRAINT_AMOUNT + 1);
 
   x: PivotNumber[][] =
-    MatrixHelper.generateNumberMatrix(START_VARIABLE_AMOUNT, START_CONSTRAINT_AMOUNT + 1);
+    MatriceHelper.generateNumberMatrix(START_VARIABLE_AMOUNT + 1, START_CONSTRAINT_AMOUNT + 1);
 
   rows = START_CONSTRAINT_AMOUNT;
 
@@ -32,8 +31,50 @@ export class AppComponent {
 
   variableNames: string[] = [];
 
+  isEditing = true;
+
   constructor() {
     this.initializeVariableNames();
+    this.x[0][0].numerator = 1; // z-value
+  }
+
+  public incomingIndex = -1;
+  public outgoingIndex = -1;
+
+  public toggleEditing() {
+    this.isEditing = !this.isEditing;
+    if (!this.isEditing) {
+      this.incomingIndex = -1;
+      this.outgoingIndex = -1;
+    }
+  }
+
+  public chooseIncomingIndex(index: number) {
+    if (!this.isEditing) {
+      this.incomingIndex = index;
+    }
+  }
+
+  public chooseOutgoingIndex(index: number) {
+    if (!this.isEditing) {
+      this.outgoingIndex = index;
+    }
+  }
+
+  public pivot() {
+    console.log(this.incomingIndex, this.outgoingIndex);
+
+    let multipliers = MatriceHelper.getPivotMultipliers(this.x, this.outgoingIndex, this.incomingIndex);
+    console.log(multipliers)
+
+    MatriceHelper.pivotBmatrice(this.b, this.outgoingIndex, multipliers);
+    MatriceHelper.pivotXmatrice(this.x, this.outgoingIndex, this.incomingIndex, multipliers);
+
+    this.incomingIndex = -1;
+    this.outgoingIndex = -1;
+
+    this.b = MatriceHelper.simplifyRow(this.b);
+    this.x = MatriceHelper.simplifyMatrice(this.x);
   }
 
   public addVariable() {
@@ -46,22 +87,43 @@ export class AppComponent {
     this.variableNames.push(`x${this.variables}`);
   }
 
+  public updateXvalue(row: number, column: number, value: number) {
+    this.x[row][column].numerator = +value;
+  }
+
+  public updateBvalue(row: number, value: number) {
+    this.b[row].numerator = + value;
+  }
+
   public removeVariable(index: number): void {
     _.forEach(this.x, row => {
-      row.splice(index, index ? index : index + 1)
+      row.splice(index, 1)
     });
 
     this.variableNames.pop();
     this.variables--;
   }
 
+  public onVariableUpdate(row, column, value) {
+    this.x[row][column].numerator = value;
+  }
+
   public addConstraint() {
-    this.x.push(MatrixHelper.generateNumberRow(this.variables));
+    this.x.push(MatriceHelper.generateNumberRow(this.variables + 1));
     this.b.push(new PivotNumber(0));
+
+
+    console.log(this.x);
+    console.log(this.b)
+    this.constraints++;
   }
 
   public removeConstraint(index: number): void {
-    this.x.splice(index, index ? index : index + 1);
+    this.x.splice(index, 1);
+    this.b.splice(index, 1);
+    this.constraints--;
+
+    console.log(this.constraints)
   }
 
   private initializeVariableNames() {

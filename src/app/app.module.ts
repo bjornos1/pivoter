@@ -3,10 +3,12 @@ import { NgModule } from '@angular/core';
 import { ReactiveFormsModule } from '@angular/forms';
 
 import { AppComponent } from './app.component';
+import { PivotNumberPipe } from './PivotNumberPipe';
 
 @NgModule({
   declarations: [
-    AppComponent
+    AppComponent,
+    PivotNumberPipe
   ],
   imports: [
     BrowserModule,

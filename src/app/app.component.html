@@ -1,5 +1,5 @@
 <div class="root">
-  <h1>Skapa tablå</h1>
+  <h1>{{isEditing ? 'Skapa tablå' : 'Pivotera'}}</h1>
 
   <div class="content">
     <ng-container
@@ -10,19 +10,39 @@
       *ngTemplateOutlet="numberRows"
     ></ng-container>
 
-    <ng-container
-      *ngTemplateOutlet="bottom">
+    <ng-container *ngIf="isEditing">
+      <ng-container
+        *ngTemplateOutlet="bottom">
+      </ng-container>
     </ng-container>
+
   </div>
 
-  <div class="addButtons">
-    <button (click)="addVariable()">
-      Lägg till variabel
-    </button>
 
-    <button (click)="addConstraint()">
-      Lägg till villkor
-    </button>
+  <div class="buttons">
+    <ng-container *ngIf="isEditing">
+      <button (click)="addVariable()">
+        Lägg till variabel
+      </button>
+
+      <button (click)="addConstraint()">
+        Lägg till villkor
+      </button>
+
+      <button (click)="toggleEditing()">
+        {{isEditing ? 'Börja pivotera' : 'Börja om'}}
+      </button>
+    </ng-container>
+
+    <ng-container *ngIf="!isEditing">
+      <button
+        [disabled]="incomingIndex == -1 || outgoingIndex == -1"
+        (click)="pivot()"
+      >
+        Pivotera
+      </button>
+    </ng-container>
+
   </div>
 </div>
 
@@ -34,7 +54,13 @@
       -z
     </div>
 
-    <div class="column" *ngFor="let variableName of variableNames">
+    <div
+      *ngFor="let variableName of variableNames; let col=index;"
+      class="column"
+      [class.clickable]="!isEditing"
+      [class.incoming]="col + 1 === incomingIndex"
+      (click)="chooseIncomingIndex(col + 1)"
+    >
       {{variableName}}
     </div>
 
@@ -59,20 +85,62 @@
   </ng-container>
 </ng-template>
 
-<ng-template #numberRow let-row="row" let-first="first">
-  <div class="column">
-    {{first ? '-z' : ''}}
-  </div>
-  <div class="column">0</div> <!-- z-value in constraint is zero-->
+<ng-template #numberRow let-row="row" let-firstRow="first">
+  <ng-container *ngIf="firstRow">
+    <div class="column">
+      -z
+    </div>
+  </ng-container>
 
-  <div class="column" *ngFor="let el of x[row]; let index=index;">
-    {{el.numerator}}
+  <ng-container *ngIf="!firstRow">
+    <div
+      class="column"
+      [class.clickable]="!isEditing"
+      [class.outgoing]="row === outgoingIndex"
+      (click)="chooseOutgoingIndex(row)"
+    >
+      asd
+    </div>
+  </ng-container>
+
+  <div
+    *ngFor="let el of x[row]; let col=index; let firstCol=first;"
+    class="column"
+    [class.inIncomingCol]="col===incomingIndex"
+    [class.inOutgoingRow]="row===outgoingIndex"
+  >
+    <ng-container *ngIf="firstRow && firstCol || !isEditing">
+      {{el | pivotnumber}}
+    </ng-container>
+
+    <ng-container *ngIf="isEditing && !(firstRow && firstCol)">
+      <input
+        class="input"
+        value={{el.numerator}}
+        (change)="updateXvalue(row, col, $event.target.value)"
+      >
+    </ng-container>
   </div>
 
-  <div class="column">{{b[row].numerator}}</div>
+  <div class="column" [class.inOutgoingRow]="row === outgoingIndex">
+    <ng-container *ngIf="isEditing">
+
+      <input
+        class="input"
+        value={{b[row].numerator}}
+        (change)="updateBvalue(row, $event.target.value)"
+      >
+    </ng-container>
+
+    <ng-container *ngIf="!isEditing">
+      {{b[row] | pivotnumber}}
+    </ng-container>
+  </div>
 
   <div class="column borderless">
-    <button (click)="removeConstraint(row)" *ngIf="!first">
+    <button
+      (click)="removeConstraint(row)"
+      *ngIf="!firstRow && isEditing">
       Ta bort villkor
     </button>
   </div>
@@ -85,11 +153,13 @@
     <div class="column borderless"></div>
 
     <ng-container *ngIf="variables">
-      <div class="column borderless" *ngFor="let col of x[0]; let index = index">
-        <button (click)="removeVariable(index)">
-          Ta bort variabel
-        </button>
-      </div>
+      <ng-container *ngFor="let col of x[0]; let index=index; let first=first;">
+        <div class="column borderless" *ngIf="!first">
+          <button (click)="removeVariable(index)">
+            Ta bort variabel
+          </button>
+        </div>
+      </ng-container>
     </ng-container>
 
     <div class="column borderless"></div>
