@@ -1,0 +1,40 @@
+.root {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+
+.row {
+  height: 50px;
+  display: flex;
+  margin-top: 2px;
+}
+
+.column {
+  border-style: solid;
+  border-width: 2px;
+  height: 100%;
+  width: 100px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+
+  margin-left: -2px;
+
+  &.borderless {
+    border-style: none;
+    margin:2px;
+    margin-left: 0;
+  }
+}
+
+.addButtons{
+  display: flex;
+  flex-direction: column;
+  width: 100px;
+
+  button {
+    margin-bottom: 10px;
+  }
+}
