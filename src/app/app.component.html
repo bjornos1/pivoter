@@ -1,5 +1,13 @@
 <div class="root">
-  <h1>{{isEditing ? 'Skapa tablå' : 'Pivotera'}}</h1>
+  <div class="resetButtonContainer">
+    <h1>{{isEditing ? 'Skapa tablå' : 'Pivotera'}}</h1>
+    <button
+      (click)="resetToOriginalAndEdit()"
+      *ngIf="!isEditing"
+    >
+      Återställ till original
+    </button>
+  </div>
 
   <div class="content">
     <ng-container
@@ -15,7 +23,6 @@
         *ngTemplateOutlet="bottom">
       </ng-container>
     </ng-container>
-
   </div>
 
 
@@ -29,7 +36,7 @@
         Lägg till villkor
       </button>
 
-      <button (click)="toggleEditing()">
+      <button class="bigButton" (click)="toggleEditing()">
         {{isEditing ? 'Börja pivotera' : 'Börja om'}}
       </button>
     </ng-container>
@@ -44,6 +51,12 @@
     </ng-container>
 
   </div>
+
+  <ng-container *ngIf="!isEditing && lastMultipliers.length > 0">
+    <ng-container
+      *ngTemplateOutlet="lastAction">
+    </ng-container>
+  </ng-container>
 </div>
 
 <ng-template #top>
@@ -99,7 +112,7 @@
       [class.outgoing]="row === outgoingIndex"
       (click)="chooseOutgoingIndex(row)"
     >
-      asd
+      {{baseIndexes[row] === -1 ? '' : variableNames[baseIndexes[row] - 1]}}
     </div>
   </ng-container>
 
@@ -137,12 +150,15 @@
     </ng-container>
   </div>
 
-  <div class="column borderless">
+  <div class="column borderless" *ngIf="!firstRow && isEditing">
     <button
-      (click)="removeConstraint(row)"
-      *ngIf="!firstRow && isEditing">
+      (click)="removeConstraint(row)">
       Ta bort villkor
     </button>
+  </div>
+
+  <div class="column circle" *ngIf="lastMultipliers.length > 0 && lastMultipliers[row].numerator !== 0">
+    {{lastMultipliers[row] | pivotnumber}}
   </div>
 
 </ng-template>
@@ -165,4 +181,13 @@
     <div class="column borderless"></div>
 
   </div>
+</ng-template>
+
+<ng-template #lastAction>
+  <h4>
+    Föregående inkommande: {{variableNames[lastIncomingNameIndex]}}
+  </h4>
+  <h4>
+    Föregående utgående: {{variableNames[lastOutgoingNameIndex]}} (Villkor: {{lastOutgoingRowIndex}})
+  </h4>
 </ng-template>

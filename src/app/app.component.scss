@@ -4,11 +4,13 @@
   height: 100%;
 
   font-size: 20px;
+  font-family: Arial, Helvetica, sans-serif;
 }
 
 
 .row {
   height: 50px;
+  align-items: center;
   display: flex;
   margin-top: 2px;
 }
@@ -50,6 +52,16 @@
     background-color: #ff6666;
   }
 
+  &.circle {
+    border-width: 2px;
+    border-radius: 30px;
+    border-style: solid;
+
+    width: 70px;
+    height: 30px;
+    margin-left: 15px;
+  }
+
   input {
     max-width: 30px;
   }
@@ -63,5 +75,14 @@
 
   button {
     margin-bottom: 10px;
+  }
+}
+
+.resetButtonContainer{
+  display: flex;
+  align-items: center;
+
+  h1 {
+    margin-right: 30px;
   }
 }

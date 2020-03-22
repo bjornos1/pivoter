@@ -7,7 +7,6 @@ import { MatrixHelper as MatriceHelper } from 'src/helpers/MatriceHelper';
 const START_VARIABLE_AMOUNT = 2;
 const START_CONSTRAINT_AMOUNT = 3;
 
-
 @Component({
   selector: 'app-root',
   templateUrl: './app.component.html',
@@ -25,27 +24,41 @@ export class AppComponent {
   x: PivotNumber[][] =
     MatriceHelper.generateNumberMatrix(START_VARIABLE_AMOUNT + 1, START_CONSTRAINT_AMOUNT + 1);
 
+  originalB: PivotNumber[];
+  originalX: PivotNumber[][];
+
   rows = START_CONSTRAINT_AMOUNT;
 
   columns = START_VARIABLE_AMOUNT;
 
   variableNames: string[] = [];
+  baseIndexes: number[];
+
+  lastMultipliers: PivotNumber[] = [];
 
   isEditing = true;
 
   constructor() {
     this.initializeVariableNames();
     this.x[0][0].numerator = 1; // z-value
+    this.updateBaseIndexes();
   }
 
   public incomingIndex = -1;
   public outgoingIndex = -1;
+
+  public lastIncomingNameIndex = -1;
+  public lastOutgoingNameIndex = -1;
+  public lastOutgoingRowIndex = -1;
 
   public toggleEditing() {
     this.isEditing = !this.isEditing;
     if (!this.isEditing) {
       this.incomingIndex = -1;
       this.outgoingIndex = -1;
+
+      this.saveMatriceAsOriginal();
+      this.updateBaseIndexes();
     }
   }
 
@@ -65,16 +78,44 @@ export class AppComponent {
     console.log(this.incomingIndex, this.outgoingIndex);
 
     let multipliers = MatriceHelper.getPivotMultipliers(this.x, this.outgoingIndex, this.incomingIndex);
-    console.log(multipliers)
 
     MatriceHelper.pivotBmatrice(this.b, this.outgoingIndex, multipliers);
     MatriceHelper.pivotXmatrice(this.x, this.outgoingIndex, this.incomingIndex, multipliers);
 
-    this.incomingIndex = -1;
-    this.outgoingIndex = -1;
+    this.updateIncOutIndexes();
 
     this.b = MatriceHelper.simplifyRow(this.b);
     this.x = MatriceHelper.simplifyMatrice(this.x);
+
+    this.updateBaseIndexes();
+
+    this.lastMultipliers = MatriceHelper.simplifyRow(multipliers);
+  }
+
+  public resetToOriginalAndEdit() {
+    this.resetCalculations();
+    this.resetMatrice();
+    this.isEditing = true;
+  }
+
+  public resetCalculations() {
+    this.lastIncomingNameIndex = -1;
+    this.lastOutgoingNameIndex = -1;
+
+    this.incomingIndex = -1;
+    this.outgoingIndex = -1;
+
+    this.lastMultipliers = [];
+  }
+
+  public resetMatrice() {
+    this.b = this.originalB;
+    this.x = this.originalX;
+  }
+
+  public saveMatriceAsOriginal() {
+    this.originalX = _.cloneDeep(this.x);
+    this.originalB = _.cloneDeep(this.b);
   }
 
   public addVariable() {
@@ -89,6 +130,7 @@ export class AppComponent {
 
   public updateXvalue(row: number, column: number, value: number) {
     this.x[row][column].numerator = +value;
+    this.updateBaseIndexes();
   }
 
   public updateBvalue(row: number, value: number) {
@@ -112,9 +154,6 @@ export class AppComponent {
     this.x.push(MatriceHelper.generateNumberRow(this.variables + 1));
     this.b.push(new PivotNumber(0));
 
-
-    console.log(this.x);
-    console.log(this.b)
     this.constraints++;
   }
 
@@ -122,13 +161,30 @@ export class AppComponent {
     this.x.splice(index, 1);
     this.b.splice(index, 1);
     this.constraints--;
+  }
 
-    console.log(this.constraints)
+  private updateIncOutIndexes() {
+    this.lastIncomingNameIndex = this.incomingIndex - 1;
+    this.lastOutgoingNameIndex = this.baseIndexes[this.outgoingIndex] - 1;
+
+    this.lastOutgoingRowIndex = this.outgoingIndex;
+
+    this.incomingIndex = -1;
+    this.outgoingIndex = -1;
+  }
+
+  private updateBaseIndexes() {
+    this.baseIndexes = [];
+    for(let row=0; row < this.x.length; row++) {
+      this.baseIndexes.push(MatriceHelper.getBaseIndex(this.x, row));
+    }
   }
 
   private initializeVariableNames() {
     for (let i = 0; i < START_VARIABLE_AMOUNT; i++) {
       this.variableNames.push(`x${i + 1}`);
     }
+
+    this.baseIndexes = Array(START_CONSTRAINT_AMOUNT);
   }
 }
